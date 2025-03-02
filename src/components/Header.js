@@ -3,14 +3,32 @@ import { URLS } from "../utils/constants";
 import { auth } from "../server/firebase";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
+import { useEffect } from "react";
+import { onAuthStateChanged } from "firebase/auth";
+import { useDispatch } from "react-redux";
+import { addUser, removeUser } from "../store/slices/userSlice";
 
 const Header = () => {
+  const dispatch = useDispatch();
   const navigate = useNavigate();
   const user = useSelector(store => store.user);
 
+  useEffect(() => {
+    const unsubscribe =onAuthStateChanged(auth, (user) => {
+        if (user) {
+          const { uid, email, displayName } = user;
+          dispatch(addUser({ uid, email, displayName }));
+          navigate("/browse");
+        } else {
+          dispatch(removeUser());
+          navigate("/");
+        }
+      });
+      return () => unsubscribe();
+// eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const handleSignOut = () => {
     signOut(auth).then(() => {
-      navigate("/");
     }).catch((error) => {
       console.log(error);
     });  
